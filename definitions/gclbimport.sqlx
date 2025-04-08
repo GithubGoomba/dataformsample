@@ -1,0 +1,9 @@
+config {
+ type: "table"
+}
+
+LOAD DATA INTO GCLB_Sample.GCLB_raw_avro
+  FROM FILES(
+    format='AVRO',
+    uris = ['gs://lbdatabucketavro/*']
+  )

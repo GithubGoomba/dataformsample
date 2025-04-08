@@ -1,0 +1,11 @@
+
+config {
+ type: "incremental",
+  bigquery: {
+    partitionBy: "TIMESTAMP_TRUNC(receiveTimestamp, HOUR)"
+  }
+}
+
+SELECT * FROM ${ref("GCLB_raw_avro")}
+
+${when(incremental(), `WHERE receiveTimestamp > (SELECT MAX(receiveTimestamp) FROM ${self()})`) }
