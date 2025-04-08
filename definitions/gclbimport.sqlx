@@ -2,8 +2,8 @@ config {
  type: "operations"
 }
 
-LOAD DATA INTO GCLB_Sample.GCLB_raw_avro
+LOAD DATA INTO GCLB_Sample.GCLB_raw
   FROM FILES(
-    format='AVRO',
-    uris = ['gs://lbdatabucketavro/*']
+    format='NEWLINE_DELIMITED_JSON',
+    uris = ['gs://lbdata_bucket/*']
   )

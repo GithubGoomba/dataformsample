@@ -7,6 +7,6 @@ config {
    dependencies: [ "gclbimport" ] 
 }
 
-SELECT * FROM GCLB_Sample.GCLB_raw_avro
+SELECT * FROM GCLB_Sample.GCLB_raw
 
 ${when(incremental(), `WHERE receiveTimestamp > (SELECT MAX(receiveTimestamp) FROM ${self()})`) }
