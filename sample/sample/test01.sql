@@ -1,1 +1,0 @@
-Select * FROM GCLB_Sample.GCLB_raw
