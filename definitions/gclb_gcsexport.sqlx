@@ -1,0 +1,78 @@
+config {
+    type: "operations",
+    tags: ["export", "gcs", "incremental", "iceberg"],
+    dependencies: ["GCLB_processraw"] // Example
+}
+
+  -- File: definitions/exports/export_new_gclb_data.sqlx
+  -- Description: Exports new data from GCLB_processraw to GCS for Iceberg loading.
+  /*
+  =============================================================================
+  INCREMENTAL EXPORT SCRIPT
+  =============================================================================
+  This script exports data identified as "new" from the source table
+  to a GCS bucket using BigQuery's EXPORT DATA statement.
+
+  IMPORTANT: You MUST customize the WHERE clause below to correctly
+  identify new records based on your table's structure
+  (e.g., using an ingestion timestamp, partition time, etc.)
+  and your desired incremental logic.
+  =============================================================================
+  */
+EXPORT DATA
+  OPTIONS (
+    -- Target GCS URI pattern. BigQuery will write one or more files matching this pattern.
+    -- Using ${run_id()} ensures unique file prefixes for each Dataform run, preventing conflicts.
+    uri = "gs://lbdata_bucket/iceberg/export_*.parquet",
+    -- Specify the output format. PARQUET is common for data lakes / Iceberg.
+    -- Other options: CSV, JSON, AVRO.
+    format = "PARQUET",
+    -- Compression for the output files (relevant for PARQUET, AVRO).
+    compression = "SNAPPY",
+    -- If true, overwrites existing files matching the URI pattern.
+    -- Set to false because we are adding new files based on the WHERE clause.
+    -- The use of run_id() in the uri also helps isolate each run's output.
+    OVERWRITE = FALSE ) AS
+  -- Select the data to be exported.
+SELECT
+  -- Specify columns explicitly if you don't need all of them
+  *
+FROM
+  -- Reference the source table.
+  -- If declared in Dataform: ${ref("siftsimplepipeline", "GCLB_Sample", "GCLB_processraw")} or ${ref("GCLB_processraw")}
+  -- If external source: use the full path directly.
+  ${ref("GCLB_processraw")} AS source_table
+WHERE
+  -- ========================================================================
+  -- !!! CRITICAL: DEFINE YOUR INCREMENTAL LOGIC HERE !!!
+  -- ========================================================================
+  -- Replace 'your_timestamp_column' with the actual column in your table
+  -- that indicates when the data was added or should be considered for export.
+  -- OPTION 1: Lookback Window (e.g., data from the last 24 hours)
+  -- Suitable if runs are daily and latency is low. Adjust interval as needed.
+  -- Assumes 'your_timestamp_column' exists and is of TIMESTAMP type.
+  receiveTimestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)
+  -- OPTION 2: Using Date Partitioning (if table is partitioned, e.g., by day)
+  -- Replace _PARTITIONTIME with your partitioning column if applicable.
+  -- This exports data from today's partition (or yesterday's, adjust as needed).
+  -- _PARTITIONTIME = TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY) -- For today's data
+  -- _PARTITIONTIME = TIMESTAMP_TRUNC(TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 DAY), DAY) -- For yesterday's data
+  -- OPTION 3: Using a High Watermark (Requires external state tracking - more complex)
+  -- This would typically involve reading the last successful export timestamp from another
+  -- table (potentially managed in pre/post operations)
+  -- your_timestamp_column > (SELECT max_exported_ts FROM `my_audit_project.my_audit_dataset.export_log` WHERE table_name = 'GCLB_processraw')
+  -- Choose and ADAPT ONE of the options above based on your specific requirements.
+  -- Ensure the column ('your_timestamp_column' or '_PARTITIONTIME') exists and is indexed/partitioned appropriately for performance.
+  -- Optional: Add post-operations block, e.g., to log completion or update a high watermark table.
+  -- post_operations {
+  --   INSERT INTO `my_audit_project.my_audit_dataset.export_log` (run_id, table_name, status, completion_time, exported_until_ts)
+  --   VALUES (
+  --     '${run_id()}',
+  --     'GCLB_processraw',
+  --     'SUCCESS',
+  --     CURRENT_TIMESTAMP(),
+  --     -- Ideally capture the max timestamp actually exported, e.g., using a variable set earlier
+  --     -- Or approximate with CURRENT_TIMESTAMP() for simpler logging
+  --     CURRENT_TIMESTAMP()
+  --   )
+  -- }

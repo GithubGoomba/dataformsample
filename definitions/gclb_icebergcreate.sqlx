@@ -1,0 +1,22 @@
+config {
+    type: "operations",
+    tags: ["export", "gcs", "incremental", "iceberg"],
+    dependencies: ["GCLB_processraw"] // Example
+}
+
+CREATE TABLE GCLB_Sample.GCLB_Iceberg (
+receiveTimestamp TIMESTAMP, logName STRING, severity STRING, httpRequest STRUCT<protocol STRING, remoteIp STRING, responseSize INT64, userAgent STRING, status INT64, requestSize INT64, referer STRING, requestUrl STRING, latency STRING, requestMethod STRING>,
+  timestamp TIMESTAMP,
+  spanId STRING,
+  jsonPayload STRUCT<statusDetails STRING, payload_type STRING>,
+  resource STRUCT<labels STRUCT<forwarding_rule_name STRING, backend_service_name STRING, zone STRING, url_map_name STRING, target_proxy_name STRING, project_id STRING>, type STRING>,
+  insertId STRING
+)
+CLUSTER BY receiveTimestamp, severity
+WITH CONNECTION DEFAULT
+OPTIONS (
+file_format = 'PARQUET',
+table_format = 'ICEBERG',
+storage_uri = 'gs://lbdata_bucket/bq_iceberg');
+
+
