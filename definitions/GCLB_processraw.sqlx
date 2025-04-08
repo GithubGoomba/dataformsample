@@ -6,6 +6,6 @@ config {
   }
 }
 
-SELECT * FROM ${ref("GCLB_raw_avro")}
+SELECT * FROM ${ref("gclbimport")}
 
 ${when(incremental(), `WHERE receiveTimestamp > (SELECT MAX(receiveTimestamp) FROM ${self()})`) }
