@@ -3,9 +3,10 @@ config {
  type: "incremental",
   bigquery: {
     partitionBy: "TIMESTAMP_TRUNC(receiveTimestamp, HOUR)"
-  }
+  },
+   dependencies: [ "gclbimport" ] 
 }
 
-SELECT * FROM ${ref("gclbimport")}
+SELECT * FROM GCLB_Sample.GCLB_raw_avro
 
 ${when(incremental(), `WHERE receiveTimestamp > (SELECT MAX(receiveTimestamp) FROM ${self()})`) }
