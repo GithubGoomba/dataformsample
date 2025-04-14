@@ -1,0 +1,8 @@
+config {
+    type: "operations"
+}
+ 
+LOAD DATA INTO GCLB_Sample.GCLB_Iceberg
+FROM FILES (
+uris=['gs://lbdata_bucket/iceberg/*'],
+format='PARQUET');

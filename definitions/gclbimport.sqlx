@@ -1,9 +1,8 @@
 config {
- type: "operations"
+    type: "operations"
 }
-
-LOAD DATA INTO GCLB_Sample.GCLB_raw
-  FROM FILES(
-    format='NEWLINE_DELIMITED_JSON',
-    uris = ['gs://lbdata_bucket/*']
-  )
+ 
+LOAD DATA INTO
+  GCLB_Sample.GCLB_raw
+FROM FILES( format='NEWLINE_DELIMITED_JSON',
+    uris = ['gs://lbdata_bucket/*'] )
